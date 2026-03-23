@@ -245,10 +245,15 @@
 <body>
   <div class="app">
     <section class="card header">
+      <div class="buttons" style="margin-bottom:12px;">
+        <button id="showMainPageBtn" class="secondary">Main Timer</button>
+        <button id="showLogPageBtn" class="secondary">Work Log</button>
+      </div>
       <h1>Mesh Fiber Games Time Bank</h1>
       <p>Bank time when you work on Mesh Fiber Games. Spend that banked time when you want leisure or gaming. Everything is saved locally on your device and keeps counting accurately using real timestamps.</p>
     </section>
 
+    <div id="mainPage">
     <section class="card bank">
       <div class="label">Available leisure bank</div>
       <div id="bankDisplay" class="big-time">00:00:00</div>
@@ -321,11 +326,42 @@
     </section>
   </div>
 
+  <div id="logPage" style="display:none;">
+    <section class="card bank">
+      <div class="label">Total Mesh Fiber Games time</div>
+      <div id="allTimeDisplay" class="big-time">00:00:00</div>
+      <div class="subtext">This is your total logged company work time across all sessions, regardless of leisure used.</div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="mode-title">
+          <h2>Daily Total</h2>
+          <div class="pill">Today</div>
+        </div>
+        <div id="dailyLogDisplay" class="timer">00:00:00</div>
+        <div class="tiny">All Mesh Fiber Games work logged today.</div>
+      </div>
+
+      <div class="card">
+        <div class="mode-title">
+          <h2>Weekly Total</h2>
+          <div class="pill">This week</div>
+        </div>
+        <div id="weeklyLogDisplay" class="timer">00:00:00</div>
+        <div class="tiny">All Mesh Fiber Games work logged this week.</div>
+      </div>
+    </section>
+  </div>
+
   <script>
     const STORAGE_KEY = 'mfg_time_bank_v1';
 
     const defaultState = () => ({
       bankMs: 0,
+      stats: {
+        workByDay: {}
+      },
       work: {
         isRunning: false,
         startedAt: null,
@@ -343,11 +379,19 @@
     });
 
     let state = loadState();
+    let currentPage = 'main';
     rollOverDailyIfNeeded();
     recoverRunningTimers();
 
     const els = {
+      mainPage: document.getElementById('mainPage'),
+      logPage: document.getElementById('logPage'),
+      showMainPageBtn: document.getElementById('showMainPageBtn'),
+      showLogPageBtn: document.getElementById('showLogPageBtn'),
       bankDisplay: document.getElementById('bankDisplay'),
+      allTimeDisplay: document.getElementById('allTimeDisplay'),
+      dailyLogDisplay: document.getElementById('dailyLogDisplay'),
+      weeklyLogDisplay: document.getElementById('weeklyLogDisplay'),
       bankState: document.getElementById('bankState'),
       workStatus: document.getElementById('workStatus'),
       workTimer: document.getElementById('workTimer'),
@@ -370,6 +414,14 @@
       fullResetBtn: document.getElementById('fullResetBtn'),
     };
 
+    els.showMainPageBtn.addEventListener('click', () => {
+      currentPage = 'main';
+      render();
+    });
+    els.showLogPageBtn.addEventListener('click', () => {
+      currentPage = 'log';
+      render();
+    });
     els.startWorkBtn.addEventListener('click', startWork);
     els.stopWorkBtn.addEventListener('click', stopWork);
     els.startLeisureBtn.addEventListener('click', startLeisure);
@@ -408,12 +460,59 @@
     startTicker();
     render();
 
-    function getTodayKey() {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
+    function getTodayKey(date = new Date()) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
       return `${y}-${m}-${d}`;
+    }
+
+    function getWeekStart(date = new Date()) {
+      const copy = new Date(date);
+      const day = copy.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      copy.setDate(copy.getDate() + diff);
+      copy.setHours(0, 0, 0, 0);
+      return copy;
+    }
+
+    function addWorkedMs(ms, atTime = Date.now()) {
+      const safeMs = Math.max(0, ms || 0);
+      if (!safeMs) return;
+      state.work.sessionAccumulatedMs += safeMs;
+      state.work.todayMs += safeMs;
+      state.bankMs += safeMs;
+      const key = getTodayKey(new Date(atTime));
+      if (!state.stats || !state.stats.workByDay) state.stats = { workByDay: {} };
+      state.stats.workByDay[key] = (Number(state.stats.workByDay[key]) || 0) + safeMs;
+    }
+
+    function addLeisureMs(ms) {
+      const safeMs = Math.max(0, ms || 0);
+      if (!safeMs) return;
+      state.leisure.sessionAccumulatedMs += safeMs;
+      state.leisure.todayMs += safeMs;
+      state.bankMs = Math.max(0, state.bankMs - safeMs);
+    }
+
+    function getAllTimeWorkMs() {
+      if (!state.stats || !state.stats.workByDay) return 0;
+      return Object.values(state.stats.workByDay).reduce((sum, value) => sum + (Number(value) || 0), 0);
+    }
+
+    function getTodayWorkMs() {
+      return Number(state.stats?.workByDay?.[getTodayKey()]) || 0;
+    }
+
+    function getWeekWorkMs() {
+      const start = getWeekStart();
+      let total = 0;
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(start);
+        day.setDate(start.getDate() + i);
+        total += Number(state.stats?.workByDay?.[getTodayKey(day)]) || 0;
+      }
+      return total;
     }
 
     function loadState() {
@@ -424,6 +523,7 @@
         return {
           ...defaultState(),
           ...parsed,
+          stats: { ...defaultState().stats, ...(parsed.stats || {}) },
           work: { ...defaultState().work, ...(parsed.work || {}) },
           leisure: { ...defaultState().leisure, ...(parsed.leisure || {}) },
         };
@@ -454,18 +554,14 @@
 
       if (state.work.isRunning && state.work.startedAt) {
         const elapsed = Math.max(0, now - state.work.startedAt);
-        state.work.sessionAccumulatedMs += elapsed;
-        state.work.todayMs += elapsed;
-        state.bankMs += elapsed;
+        addWorkedMs(elapsed, now);
         state.work.startedAt = now;
       }
 
       if (state.leisure.isRunning && state.leisure.startedAt) {
         const elapsed = Math.max(0, now - state.leisure.startedAt);
         const usable = Math.min(elapsed, state.bankMs);
-        state.leisure.sessionAccumulatedMs += usable;
-        state.leisure.todayMs += usable;
-        state.bankMs -= usable;
+        addLeisureMs(usable);
 
         if (usable < elapsed || state.bankMs <= 0) {
           state.leisure.isRunning = false;
@@ -491,9 +587,7 @@
         const now = Date.now();
         const elapsed = now - state.work.startedAt;
         if (elapsed > 0) {
-          state.work.sessionAccumulatedMs += elapsed;
-          state.work.todayMs += elapsed;
-          state.bankMs += elapsed;
+          addWorkedMs(elapsed, now);
           state.work.startedAt = now;
         }
       }
@@ -503,9 +597,7 @@
         const elapsed = now - state.leisure.startedAt;
         if (elapsed > 0) {
           const usable = Math.min(elapsed, state.bankMs);
-          state.leisure.sessionAccumulatedMs += usable;
-          state.leisure.todayMs += usable;
-          state.bankMs -= usable;
+          addLeisureMs(usable);
 
           if (usable < elapsed || state.bankMs <= 0) {
             state.bankMs = Math.max(0, state.bankMs);
@@ -535,9 +627,7 @@
       if (!state.work.isRunning) return;
       const now = Date.now();
       const elapsed = Math.max(0, now - state.work.startedAt);
-      state.work.sessionAccumulatedMs += elapsed;
-      state.work.todayMs += elapsed;
-      state.bankMs += elapsed;
+      addWorkedMs(elapsed, now);
       state.work.isRunning = false;
       state.work.startedAt = null;
       saveState();
@@ -563,9 +653,7 @@
       const now = Date.now();
       const elapsed = Math.max(0, now - state.leisure.startedAt);
       const usable = Math.min(elapsed, state.bankMs);
-      state.leisure.sessionAccumulatedMs += usable;
-      state.leisure.todayMs += usable;
-      state.bankMs -= usable;
+      addLeisureMs(usable);
       state.bankMs = Math.max(0, state.bankMs);
       state.leisure.isRunning = false;
       state.leisure.startedAt = null;
@@ -614,6 +702,7 @@
           const nextState = {
             ...defaultState(),
             ...imported,
+            stats: { ...defaultState().stats, ...(imported.stats || {}) },
             work: { ...defaultState().work, ...(imported.work || {}) },
             leisure: { ...defaultState().leisure, ...(imported.leisure || {}) },
           };
@@ -625,6 +714,8 @@
           nextState.leisure.todayMs = Math.max(0, Number(nextState.leisure.todayMs) || 0);
           nextState.work.isRunning = Boolean(nextState.work.isRunning);
           nextState.leisure.isRunning = Boolean(nextState.leisure.isRunning);
+          nextState.stats = nextState.stats || { workByDay: {} };
+          nextState.stats.workByDay = nextState.stats.workByDay || {};
 
           state = nextState;
           rollOverDailyIfNeeded();
@@ -650,7 +741,12 @@
     }
 
     function render() {
+      els.mainPage.style.display = currentPage === 'main' ? 'block' : 'none';
+      els.logPage.style.display = currentPage === 'log' ? 'block' : 'none';
       els.bankDisplay.textContent = formatMs(state.bankMs);
+      els.allTimeDisplay.textContent = formatMs(getAllTimeWorkMs());
+      els.dailyLogDisplay.textContent = formatMs(getTodayWorkMs());
+      els.weeklyLogDisplay.textContent = formatMs(getWeekWorkMs());
 
       if (state.work.isRunning) {
         els.bankState.textContent = 'Work is currently adding time to your leisure bank.';
