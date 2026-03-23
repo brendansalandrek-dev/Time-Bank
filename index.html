@@ -299,10 +299,6 @@
 
       <section class="card footer">
         <div class="row">
-          <button id="addFiveBtn" class="secondary">+5 min test</button>
-          <button id="resetTodayBtn" class="secondary">Reset today totals</button>
-        </div>
-        <div class="row">
           <select id="alarmSelect" class="secondary" style="text-align: center; text-align-last: center;">
             <option value="techno">Techno Alarm</option>
             <option value="classic">Classic Alarm</option>
@@ -410,8 +406,6 @@
       stopWorkBtn: document.getElementById('stopWorkBtn'),
       startLeisureBtn: document.getElementById('startLeisureBtn'),
       stopLeisureBtn: document.getElementById('stopLeisureBtn'),
-      addFiveBtn: document.getElementById('addFiveBtn'),
-      resetTodayBtn: document.getElementById('resetTodayBtn'),
       alarmSelect: document.getElementById('alarmSelect'),
       testAlarmBtn: document.getElementById('testAlarmBtn'),
       exportBtn: document.getElementById('exportBtn'),
@@ -433,19 +427,6 @@
     els.stopWorkBtn.addEventListener('click', stopWork);
     els.startLeisureBtn.addEventListener('click', startLeisure);
     els.stopLeisureBtn.addEventListener('click', stopLeisure);
-    els.addFiveBtn.addEventListener('click', () => {
-      state.bankMs += 5 * 60 * 1000;
-      saveState();
-      render();
-    });
-    els.resetTodayBtn.addEventListener('click', () => {
-      state.work.todayMs = 0;
-      state.leisure.todayMs = 0;
-      state.work.todayKey = getTodayKey();
-      state.leisure.todayKey = getTodayKey();
-      saveState();
-      render();
-    });
     els.alarmSelect.addEventListener('change', (event) => {
       state.settings.alarm = event.target.value;
       saveState();
