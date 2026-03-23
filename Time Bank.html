@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Mesh Fiber Games Time Bank</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171b22;
+      --panel-2: #1d232c;
+      --text: #e8edf5;
+      --muted: #9aa6b5;
+      --border: #2a3442;
+      --good: #1f9d55;
+      --bad: #c24141;
+      --accent: #5b8cff;
+      --shadow: 0 10px 30px rgba(0,0,0,.28);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(180deg, #0c0f14 0%, #11161d 100%);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100%;
+    }
+
+    body {
+      padding: 16px;
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+      padding-top: max(16px, env(safe-area-inset-top));
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+
+    .app {
+      max-width: 720px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: rgba(23, 27, 34, 0.96);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .header h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      line-height: 1.1;
+    }
+
+    .header p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .bank {
+      text-align: center;
+      padding: 24px 18px;
+      background: linear-gradient(180deg, rgba(91,140,255,.10), rgba(91,140,255,.03));
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: .92rem;
+      letter-spacing: .02em;
+      margin-bottom: 8px;
+    }
+
+    .big-time {
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(2.1rem, 10vw, 4rem);
+      font-weight: 800;
+      letter-spacing: .03em;
+      line-height: 1;
+      margin: 6px 0 10px;
+    }
+
+    .subtext {
+      color: var(--muted);
+      font-size: .95rem;
+      line-height: 1.4;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 700px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .mode-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .mode-title h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: .82rem;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: rgba(255,255,255,.02);
+      white-space: nowrap;
+    }
+
+    .pill.active-work {
+      color: #c8f3d9;
+      border-color: rgba(31,157,85,.45);
+      background: rgba(31,157,85,.14);
+    }
+
+    .pill.active-leisure {
+      color: #ffd4d4;
+      border-color: rgba(194,65,65,.45);
+      background: rgba(194,65,65,.14);
+    }
+
+    .timer {
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(1.8rem, 8vw, 2.8rem);
+      font-weight: 800;
+      letter-spacing: .03em;
+      line-height: 1;
+      margin: 10px 0 16px;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 14px 16px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .08s ease, opacity .15s ease, border-color .15s ease;
+      min-height: 52px;
+    }
+
+    button:active { transform: scale(.985); }
+    button[disabled] { opacity: .5; cursor: not-allowed; }
+
+    .start-work {
+      border-color: rgba(31,157,85,.45);
+      background: rgba(31,157,85,.16);
+    }
+
+    .stop-work {
+      background: rgba(255,255,255,.03);
+    }
+
+    .start-leisure {
+      border-color: rgba(194,65,65,.45);
+      background: rgba(194,65,65,.16);
+    }
+
+    .stop-leisure {
+      background: rgba(255,255,255,.03);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(255,255,255,.02);
+    }
+
+    .stat .k {
+      color: var(--muted);
+      font-size: .84rem;
+      margin-bottom: 6px;
+    }
+
+    .stat .v {
+      font-variant-numeric: tabular-nums;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .footer {
+      display: grid;
+      gap: 10px;
+    }
+
+    .footer .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .secondary {
+      background: rgba(255,255,255,.03);
+    }
+
+    .danger {
+      border-color: rgba(194,65,65,.45);
+      background: rgba(194,65,65,.10);
+    }
+
+    .tiny {
+      color: var(--muted);
+      font-size: .85rem;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="card header">
+      <h1>Mesh Fiber Games Time Bank</h1>
+      <p>Bank time when you work on Mesh Fiber Games. Spend that banked time when you want leisure or gaming. Everything is saved locally on your device and keeps counting accurately using real timestamps.</p>
+    </section>
+
+    <section class="card bank">
+      <div class="label">Available leisure bank</div>
+      <div id="bankDisplay" class="big-time">00:00:00</div>
+      <div id="bankState" class="subtext">Ready</div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="mode-title">
+          <h2>Mesh Fiber Games Work</h2>
+          <div id="workStatus" class="pill">Stopped</div>
+        </div>
+        <div id="workTimer" class="timer">00:00:00</div>
+        <div class="buttons">
+          <button id="startWorkBtn" class="start-work">Start Work</button>
+          <button id="stopWorkBtn" class="stop-work" disabled>Stop Work</button>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <div class="k">Session added</div>
+            <div id="workSessionValue" class="v">00:00:00</div>
+          </div>
+          <div class="stat">
+            <div class="k">Total banked today</div>
+            <div id="workTodayValue" class="v">00:00:00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="mode-title">
+          <h2>Leisure / Gaming</h2>
+          <div id="leisureStatus" class="pill">Stopped</div>
+        </div>
+        <div id="leisureTimer" class="timer">00:00:00</div>
+        <div class="buttons">
+          <button id="startLeisureBtn" class="start-leisure">Start Leisure</button>
+          <button id="stopLeisureBtn" class="stop-leisure" disabled>Stop Leisure</button>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <div class="k">Session used</div>
+            <div id="leisureSessionValue" class="v">00:00:00</div>
+          </div>
+          <div class="stat">
+            <div class="k">Total used today</div>
+            <div id="leisureTodayValue" class="v">00:00:00</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card footer">
+      <div class="row">
+        <button id="addFiveBtn" class="secondary">+5 min test</button>
+        <button id="resetTodayBtn" class="secondary">Reset today totals</button>
+      </div>
+      <div class="row">
+        <button id="clearBankBtn" class="danger">Clear bank</button>
+        <button id="fullResetBtn" class="danger">Full reset</button>
+      </div>
+      <div class="tiny">
+        Rules: only one timer can run at a time. Work adds to the bank. Leisure subtracts from the bank. Leisure automatically stops at zero so you cannot go negative.
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'mfg_time_bank_v1';
+
+    const defaultState = () => ({
+      bankMs: 0,
+      work: {
+        isRunning: false,
+        startedAt: null,
+        sessionAccumulatedMs: 0,
+        todayMs: 0,
+        todayKey: getTodayKey(),
+      },
+      leisure: {
+        isRunning: false,
+        startedAt: null,
+        sessionAccumulatedMs: 0,
+        todayMs: 0,
+        todayKey: getTodayKey(),
+      }
+    });
+
+    let state = loadState();
+    rollOverDailyIfNeeded();
+    recoverRunningTimers();
+
+    const els = {
+      bankDisplay: document.getElementById('bankDisplay'),
+      bankState: document.getElementById('bankState'),
+      workStatus: document.getElementById('workStatus'),
+      workTimer: document.getElementById('workTimer'),
+      workSessionValue: document.getElementById('workSessionValue'),
+      workTodayValue: document.getElementById('workTodayValue'),
+      leisureStatus: document.getElementById('leisureStatus'),
+      leisureTimer: document.getElementById('leisureTimer'),
+      leisureSessionValue: document.getElementById('leisureSessionValue'),
+      leisureTodayValue: document.getElementById('leisureTodayValue'),
+      startWorkBtn: document.getElementById('startWorkBtn'),
+      stopWorkBtn: document.getElementById('stopWorkBtn'),
+      startLeisureBtn: document.getElementById('startLeisureBtn'),
+      stopLeisureBtn: document.getElementById('stopLeisureBtn'),
+      addFiveBtn: document.getElementById('addFiveBtn'),
+      resetTodayBtn: document.getElementById('resetTodayBtn'),
+      clearBankBtn: document.getElementById('clearBankBtn'),
+      fullResetBtn: document.getElementById('fullResetBtn'),
+    };
+
+    els.startWorkBtn.addEventListener('click', startWork);
+    els.stopWorkBtn.addEventListener('click', stopWork);
+    els.startLeisureBtn.addEventListener('click', startLeisure);
+    els.stopLeisureBtn.addEventListener('click', stopLeisure);
+    els.addFiveBtn.addEventListener('click', () => {
+      state.bankMs += 5 * 60 * 1000;
+      saveState();
+      render();
+    });
+    els.resetTodayBtn.addEventListener('click', () => {
+      state.work.todayMs = 0;
+      state.leisure.todayMs = 0;
+      state.work.todayKey = getTodayKey();
+      state.leisure.todayKey = getTodayKey();
+      saveState();
+      render();
+    });
+    els.clearBankBtn.addEventListener('click', () => {
+      if (!confirm('Clear the current leisure bank?')) return;
+      if (state.leisure.isRunning) stopLeisure();
+      state.bankMs = 0;
+      saveState();
+      render();
+    });
+    els.fullResetBtn.addEventListener('click', () => {
+      if (!confirm('Full reset everything? This clears banked time and today totals.')) return;
+      state = defaultState();
+      saveState();
+      render();
+    });
+
+    let tickHandle = null;
+    startTicker();
+    render();
+
+    function getTodayKey() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return defaultState();
+        const parsed = JSON.parse(raw);
+        return {
+          ...defaultState(),
+          ...parsed,
+          work: { ...defaultState().work, ...(parsed.work || {}) },
+          leisure: { ...defaultState().leisure, ...(parsed.leisure || {}) },
+        };
+      } catch {
+        return defaultState();
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function rollOverDailyIfNeeded() {
+      const today = getTodayKey();
+      if (state.work.todayKey !== today) {
+        state.work.todayMs = 0;
+        state.work.todayKey = today;
+      }
+      if (state.leisure.todayKey !== today) {
+        state.leisure.todayMs = 0;
+        state.leisure.todayKey = today;
+      }
+      saveState();
+    }
+
+    function recoverRunningTimers() {
+      const now = Date.now();
+
+      if (state.work.isRunning && state.work.startedAt) {
+        const elapsed = Math.max(0, now - state.work.startedAt);
+        state.work.sessionAccumulatedMs += elapsed;
+        state.work.todayMs += elapsed;
+        state.bankMs += elapsed;
+        state.work.startedAt = now;
+      }
+
+      if (state.leisure.isRunning && state.leisure.startedAt) {
+        const elapsed = Math.max(0, now - state.leisure.startedAt);
+        const usable = Math.min(elapsed, state.bankMs);
+        state.leisure.sessionAccumulatedMs += usable;
+        state.leisure.todayMs += usable;
+        state.bankMs -= usable;
+
+        if (usable < elapsed || state.bankMs <= 0) {
+          state.leisure.isRunning = false;
+          state.leisure.startedAt = null;
+          state.bankMs = Math.max(0, state.bankMs);
+        } else {
+          state.leisure.startedAt = now;
+        }
+      }
+
+      saveState();
+    }
+
+    function startTicker() {
+      if (tickHandle) clearInterval(tickHandle);
+      tickHandle = setInterval(tick, 250);
+    }
+
+    function tick() {
+      rollOverDailyIfNeeded();
+
+      if (state.work.isRunning && state.work.startedAt) {
+        const now = Date.now();
+        const elapsed = now - state.work.startedAt;
+        if (elapsed > 0) {
+          state.work.sessionAccumulatedMs += elapsed;
+          state.work.todayMs += elapsed;
+          state.bankMs += elapsed;
+          state.work.startedAt = now;
+        }
+      }
+
+      if (state.leisure.isRunning && state.leisure.startedAt) {
+        const now = Date.now();
+        const elapsed = now - state.leisure.startedAt;
+        if (elapsed > 0) {
+          const usable = Math.min(elapsed, state.bankMs);
+          state.leisure.sessionAccumulatedMs += usable;
+          state.leisure.todayMs += usable;
+          state.bankMs -= usable;
+
+          if (usable < elapsed || state.bankMs <= 0) {
+            state.bankMs = Math.max(0, state.bankMs);
+            state.leisure.isRunning = false;
+            state.leisure.startedAt = null;
+          } else {
+            state.leisure.startedAt = now;
+          }
+        }
+      }
+
+      saveState();
+      render();
+    }
+
+    function startWork() {
+      if (state.leisure.isRunning) stopLeisure();
+      if (state.work.isRunning) return;
+      state.work.isRunning = true;
+      state.work.startedAt = Date.now();
+      state.work.sessionAccumulatedMs = 0;
+      saveState();
+      render();
+    }
+
+    function stopWork() {
+      if (!state.work.isRunning) return;
+      const now = Date.now();
+      const elapsed = Math.max(0, now - state.work.startedAt);
+      state.work.sessionAccumulatedMs += elapsed;
+      state.work.todayMs += elapsed;
+      state.bankMs += elapsed;
+      state.work.isRunning = false;
+      state.work.startedAt = null;
+      saveState();
+      render();
+    }
+
+    function startLeisure() {
+      if (state.work.isRunning) stopWork();
+      if (state.leisure.isRunning) return;
+      if (state.bankMs <= 0) {
+        alert('No banked leisure time available yet.');
+        return;
+      }
+      state.leisure.isRunning = true;
+      state.leisure.startedAt = Date.now();
+      state.leisure.sessionAccumulatedMs = 0;
+      saveState();
+      render();
+    }
+
+    function stopLeisure() {
+      if (!state.leisure.isRunning) return;
+      const now = Date.now();
+      const elapsed = Math.max(0, now - state.leisure.startedAt);
+      const usable = Math.min(elapsed, state.bankMs);
+      state.leisure.sessionAccumulatedMs += usable;
+      state.leisure.todayMs += usable;
+      state.bankMs -= usable;
+      state.bankMs = Math.max(0, state.bankMs);
+      state.leisure.isRunning = false;
+      state.leisure.startedAt = null;
+      saveState();
+      render();
+    }
+
+    function formatMs(ms) {
+      const totalSeconds = Math.floor(Math.max(0, ms) / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function render() {
+      els.bankDisplay.textContent = formatMs(state.bankMs);
+
+      if (state.work.isRunning) {
+        els.bankState.textContent = 'Work is currently adding time to your leisure bank.';
+      } else if (state.leisure.isRunning) {
+        els.bankState.textContent = 'Leisure is currently spending your banked time.';
+      } else if (state.bankMs > 0) {
+        els.bankState.textContent = 'Banked time ready to spend.';
+      } else {
+        els.bankState.textContent = 'No banked time yet.';
+      }
+
+      els.workTimer.textContent = formatMs(state.work.sessionAccumulatedMs);
+      els.workSessionValue.textContent = formatMs(state.work.sessionAccumulatedMs);
+      els.workTodayValue.textContent = formatMs(state.work.todayMs);
+
+      els.leisureTimer.textContent = formatMs(state.leisure.sessionAccumulatedMs);
+      els.leisureSessionValue.textContent = formatMs(state.leisure.sessionAccumulatedMs);
+      els.leisureTodayValue.textContent = formatMs(state.leisure.todayMs);
+
+      els.workStatus.textContent = state.work.isRunning ? 'Running' : 'Stopped';
+      els.workStatus.className = 'pill' + (state.work.isRunning ? ' active-work' : '');
+      els.leisureStatus.textContent = state.leisure.isRunning ? 'Running' : 'Stopped';
+      els.leisureStatus.className = 'pill' + (state.leisure.isRunning ? ' active-leisure' : '');
+
+      els.startWorkBtn.disabled = state.work.isRunning;
+      els.stopWorkBtn.disabled = !state.work.isRunning;
+
+      els.startLeisureBtn.disabled = state.leisure.isRunning || state.bankMs <= 0;
+      els.stopLeisureBtn.disabled = !state.leisure.isRunning;
+    }
+  </script>
+</body>
+</html>
