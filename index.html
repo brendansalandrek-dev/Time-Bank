@@ -154,7 +154,7 @@
       gap: 10px;
     }
 
-    button {
+    button, select {
       appearance: none;
       border: 1px solid var(--border);
       background: var(--panel-2);
@@ -163,11 +163,10 @@
       padding: 14px 16px;
       font: inherit;
       font-weight: 700;
-      cursor: pointer;
-      transition: transform .08s ease, opacity .15s ease, border-color .15s ease;
       min-height: 52px;
     }
 
+    button { cursor: pointer; transition: transform .08s ease, opacity .15s ease, border-color .15s ease; }
     button:active { transform: scale(.985); }
     button[disabled] { opacity: .5; cursor: not-allowed; }
 
@@ -176,17 +175,9 @@
       background: rgba(31,157,85,.16);
     }
 
-    .stop-work {
-      background: rgba(255,255,255,.03);
-    }
-
     .start-leisure {
       border-color: rgba(194,65,65,.45);
       background: rgba(194,65,65,.16);
-    }
-
-    .stop-leisure {
-      background: rgba(255,255,255,.03);
     }
 
     .stats {
@@ -254,104 +245,113 @@
     </section>
 
     <div id="mainPage">
-    <section class="card bank">
-      <div class="label">Available leisure bank</div>
-      <div id="bankDisplay" class="big-time">00:00:00</div>
-      <div id="bankState" class="subtext">Ready</div>
-    </section>
+      <section class="card bank">
+        <div class="label">Available leisure bank</div>
+        <div id="bankDisplay" class="big-time">00:00:00</div>
+        <div id="bankState" class="subtext">Ready</div>
+      </section>
 
-    <section class="grid">
-      <div class="card">
-        <div class="mode-title">
-          <h2>Mesh Fiber Games Work</h2>
-          <div id="workStatus" class="pill">Stopped</div>
-        </div>
-        <div id="workTimer" class="timer">00:00:00</div>
-        <div class="buttons">
-          <button id="startWorkBtn" class="start-work">Start Work</button>
-          <button id="stopWorkBtn" class="stop-work" disabled>Stop Work</button>
-        </div>
-        <div class="stats">
-          <div class="stat">
-            <div class="k">Session added</div>
-            <div id="workSessionValue" class="v">00:00:00</div>
+      <section class="grid">
+        <div class="card">
+          <div class="mode-title">
+            <h2>Mesh Fiber Games Work</h2>
+            <div id="workStatus" class="pill">Stopped</div>
           </div>
-          <div class="stat">
-            <div class="k">Total banked today</div>
-            <div id="workTodayValue" class="v">00:00:00</div>
+          <div id="workTimer" class="timer">00:00:00</div>
+          <div class="buttons">
+            <button id="startWorkBtn" class="start-work">Start Work</button>
+            <button id="stopWorkBtn" class="secondary" disabled>Stop Work</button>
           </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="mode-title">
-          <h2>Leisure / Gaming</h2>
-          <div id="leisureStatus" class="pill">Stopped</div>
-        </div>
-        <div id="leisureTimer" class="timer">00:00:00</div>
-        <div class="buttons">
-          <button id="startLeisureBtn" class="start-leisure">Start Leisure</button>
-          <button id="stopLeisureBtn" class="stop-leisure" disabled>Stop Leisure</button>
-        </div>
-        <div class="stats">
-          <div class="stat">
-            <div class="k">Session used</div>
-            <div id="leisureSessionValue" class="v">00:00:00</div>
-          </div>
-          <div class="stat">
-            <div class="k">Total used today</div>
-            <div id="leisureTodayValue" class="v">00:00:00</div>
+          <div class="stats">
+            <div class="stat">
+              <div class="k">Session added</div>
+              <div id="workSessionValue" class="v">00:00:00</div>
+            </div>
+            <div class="stat">
+              <div class="k">Total banked today</div>
+              <div id="workTodayValue" class="v">00:00:00</div>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <section class="card footer">
-      <div class="row">
-        <button id="addFiveBtn" class="secondary">+5 min test</button>
-        <button id="resetTodayBtn" class="secondary">Reset today totals</button>
-      </div>
-      <div class="row">
-        <button id="exportBtn" class="secondary">Export save</button>
-        <button id="importBtn" class="secondary">Import save</button>
-      </div>
-      <div class="row">
-        <button id="clearBankBtn" class="danger">Clear bank</button>
-        <button id="fullResetBtn" class="danger">Full reset</button>
-      </div>
-      <input id="importFileInput" type="file" accept="application/json,.json" hidden />
-      <div class="tiny">
-        Rules: only one timer can run at a time. Work adds to the bank. Leisure subtracts from the bank. Leisure automatically stops at zero so you cannot go negative.
-      </div>
-    </section>
-  </div>
-
-  <div id="logPage" style="display:none;">
-    <section class="card bank">
-      <div class="label">Total Mesh Fiber Games time</div>
-      <div id="allTimeDisplay" class="big-time">00:00:00</div>
-      <div class="subtext">This is your total logged company work time across all sessions, regardless of leisure used.</div>
-    </section>
-
-    <section class="grid">
-      <div class="card">
-        <div class="mode-title">
-          <h2>Daily Total</h2>
-          <div class="pill">Today</div>
+        <div class="card">
+          <div class="mode-title">
+            <h2>Leisure / Gaming</h2>
+            <div id="leisureStatus" class="pill">Stopped</div>
+          </div>
+          <div id="leisureTimer" class="timer">00:00:00</div>
+          <div class="buttons">
+            <button id="startLeisureBtn" class="start-leisure">Start Leisure</button>
+            <button id="stopLeisureBtn" class="secondary" disabled>Stop Leisure</button>
+          </div>
+          <div class="stats">
+            <div class="stat">
+              <div class="k">Session used</div>
+              <div id="leisureSessionValue" class="v">00:00:00</div>
+            </div>
+            <div class="stat">
+              <div class="k">Total used today</div>
+              <div id="leisureTodayValue" class="v">00:00:00</div>
+            </div>
+          </div>
         </div>
-        <div id="dailyLogDisplay" class="timer">00:00:00</div>
-        <div class="tiny">All Mesh Fiber Games work logged today.</div>
-      </div>
+      </section>
 
-      <div class="card">
-        <div class="mode-title">
-          <h2>Weekly Total</h2>
-          <div class="pill">This week</div>
+      <section class="card footer">
+        <div class="row">
+          <button id="addFiveBtn" class="secondary">+5 min test</button>
+          <button id="resetTodayBtn" class="secondary">Reset today totals</button>
         </div>
-        <div id="weeklyLogDisplay" class="timer">00:00:00</div>
-        <div class="tiny">All Mesh Fiber Games work logged this week.</div>
-      </div>
-    </section>
+        <div class="row">
+          <select id="alarmSelect" class="secondary">
+            <option value="techno">Techno Alarm</option>
+            <option value="classic">Classic Alarm</option>
+            <option value="clock">Clock Alarm</option>
+          </select>
+          <button id="testAlarmBtn" class="secondary">Test alarm</button>
+        </div>
+        <div class="row">
+          <button id="exportBtn" class="secondary">Export save</button>
+          <button id="importBtn" class="secondary">Import save</button>
+        </div>
+        <div class="row">
+          <button id="clearBankBtn" class="danger">Clear bank</button>
+          <button id="fullResetBtn" class="danger">Full reset</button>
+        </div>
+        <input id="importFileInput" type="file" accept="application/json,.json" hidden />
+        <div class="tiny">
+          Rules: only one timer can run at a time. Work adds to the bank. Leisure subtracts from the bank. Leisure automatically stops at zero so you cannot go negative.
+        </div>
+      </section>
+    </div>
+
+    <div id="logPage" style="display:none;">
+      <section class="card bank">
+        <div class="label">Total Mesh Fiber Games time</div>
+        <div id="allTimeDisplay" class="big-time">00:00:00</div>
+        <div class="subtext">This is your total logged company work time across all sessions, regardless of leisure used.</div>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <div class="mode-title">
+            <h2>Daily Total</h2>
+            <div class="pill">Today</div>
+          </div>
+          <div id="dailyLogDisplay" class="timer">00:00:00</div>
+          <div class="tiny">All Mesh Fiber Games work logged today.</div>
+        </div>
+
+        <div class="card">
+          <div class="mode-title">
+            <h2>Weekly Total</h2>
+            <div class="pill">This week</div>
+          </div>
+          <div id="weeklyLogDisplay" class="timer">00:00:00</div>
+          <div class="tiny">All Mesh Fiber Games work logged this week.</div>
+        </div>
+      </section>
+    </div>
   </div>
 
   <script>
@@ -361,6 +361,9 @@
       bankMs: 0,
       stats: {
         workByDay: {}
+      },
+      settings: {
+        alarm: 'techno'
       },
       work: {
         isRunning: false,
@@ -380,6 +383,8 @@
 
     let state = loadState();
     let currentPage = 'main';
+    let emptyBankAlarmPlayed = false;
+
     rollOverDailyIfNeeded();
     recoverRunningTimers();
 
@@ -389,10 +394,10 @@
       showMainPageBtn: document.getElementById('showMainPageBtn'),
       showLogPageBtn: document.getElementById('showLogPageBtn'),
       bankDisplay: document.getElementById('bankDisplay'),
+      bankState: document.getElementById('bankState'),
       allTimeDisplay: document.getElementById('allTimeDisplay'),
       dailyLogDisplay: document.getElementById('dailyLogDisplay'),
       weeklyLogDisplay: document.getElementById('weeklyLogDisplay'),
-      bankState: document.getElementById('bankState'),
       workStatus: document.getElementById('workStatus'),
       workTimer: document.getElementById('workTimer'),
       workSessionValue: document.getElementById('workSessionValue'),
@@ -407,6 +412,8 @@
       stopLeisureBtn: document.getElementById('stopLeisureBtn'),
       addFiveBtn: document.getElementById('addFiveBtn'),
       resetTodayBtn: document.getElementById('resetTodayBtn'),
+      alarmSelect: document.getElementById('alarmSelect'),
+      testAlarmBtn: document.getElementById('testAlarmBtn'),
       exportBtn: document.getElementById('exportBtn'),
       importBtn: document.getElementById('importBtn'),
       importFileInput: document.getElementById('importFileInput'),
@@ -438,6 +445,13 @@
       state.leisure.todayKey = getTodayKey();
       saveState();
       render();
+    });
+    els.alarmSelect.addEventListener('change', (event) => {
+      state.settings.alarm = event.target.value;
+      saveState();
+    });
+    els.testAlarmBtn.addEventListener('click', () => {
+      playSelectedAlarm();
     });
     els.exportBtn.addEventListener('click', exportSave);
     els.importBtn.addEventListener('click', () => els.importFileInput.click());
@@ -524,6 +538,7 @@
           ...defaultState(),
           ...parsed,
           stats: { ...defaultState().stats, ...(parsed.stats || {}) },
+          settings: { ...defaultState().settings, ...(parsed.settings || {}) },
           work: { ...defaultState().work, ...(parsed.work || {}) },
           leisure: { ...defaultState().leisure, ...(parsed.leisure || {}) },
         };
@@ -603,6 +618,10 @@
             state.bankMs = Math.max(0, state.bankMs);
             state.leisure.isRunning = false;
             state.leisure.startedAt = null;
+            if (!emptyBankAlarmPlayed) {
+              emptyBankAlarmPlayed = true;
+              playEmptyBankAlarm();
+            }
           } else {
             state.leisure.startedAt = now;
           }
@@ -616,6 +635,7 @@
     function startWork() {
       if (state.leisure.isRunning) stopLeisure();
       if (state.work.isRunning) return;
+      emptyBankAlarmPlayed = false;
       state.work.isRunning = true;
       state.work.startedAt = Date.now();
       state.work.sessionAccumulatedMs = 0;
@@ -634,9 +654,42 @@
       render();
     }
 
+    function alarmMap() {
+      return {
+        techno: 'sounds/alarm-techno.mp3',
+        classic: 'sounds/alarm-classic.mp3',
+        clock: 'sounds/alarm-clock.mp3'
+      };
+    }
+
+    function playSelectedAlarm() {
+      const selectedAlarm = state.settings?.alarm || 'techno';
+      const src = alarmMap()[selectedAlarm] || alarmMap().techno;
+      try {
+        const audio = new Audio(src);
+        audio.preload = 'auto';
+        audio.currentTime = 0;
+        const playPromise = audio.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => {});
+        }
+      } catch {}
+    }
+
+    function playEmptyBankAlarm() {
+      playSelectedAlarm();
+      try {
+        if (navigator.vibrate) navigator.vibrate([180, 120, 180]);
+      } catch {}
+      try {
+        alert('Banked leisure time is empty. Leisure has been stopped.');
+      } catch {}
+    }
+
     function startLeisure() {
       if (state.work.isRunning) stopWork();
       if (state.leisure.isRunning) return;
+      emptyBankAlarmPlayed = false;
       if (state.bankMs <= 0) {
         alert('No banked leisure time available yet.');
         return;
@@ -649,6 +702,7 @@
     }
 
     function stopLeisure() {
+      emptyBankAlarmPlayed = false;
       if (!state.leisure.isRunning) return;
       const now = Date.now();
       const elapsed = Math.max(0, now - state.leisure.startedAt);
@@ -703,6 +757,7 @@
             ...defaultState(),
             ...imported,
             stats: { ...defaultState().stats, ...(imported.stats || {}) },
+            settings: { ...defaultState().settings, ...(imported.settings || {}) },
             work: { ...defaultState().work, ...(imported.work || {}) },
             leisure: { ...defaultState().leisure, ...(imported.leisure || {}) },
           };
@@ -716,6 +771,8 @@
           nextState.leisure.isRunning = Boolean(nextState.leisure.isRunning);
           nextState.stats = nextState.stats || { workByDay: {} };
           nextState.stats.workByDay = nextState.stats.workByDay || {};
+          nextState.settings = nextState.settings || { alarm: 'techno' };
+          nextState.settings.alarm = nextState.settings.alarm || 'techno';
 
           state = nextState;
           rollOverDailyIfNeeded();
@@ -741,12 +798,16 @@
     }
 
     function render() {
-      els.mainPage.style.display = currentPage === 'main' ? 'block' : 'none';
+      els.mainPage.style.display = currentPage === 'main' ? 'block' : 'block';
       els.logPage.style.display = currentPage === 'log' ? 'block' : 'none';
+      if (currentPage !== 'log') els.mainPage.style.display = 'block';
+      if (currentPage === 'log') els.mainPage.style.display = 'none';
+
       els.bankDisplay.textContent = formatMs(state.bankMs);
       els.allTimeDisplay.textContent = formatMs(getAllTimeWorkMs());
       els.dailyLogDisplay.textContent = formatMs(getTodayWorkMs());
       els.weeklyLogDisplay.textContent = formatMs(getWeekWorkMs());
+      els.alarmSelect.value = state.settings?.alarm || 'techno';
 
       if (state.work.isRunning) {
         els.bankState.textContent = 'Work is currently adding time to your leisure bank.';
@@ -773,7 +834,6 @@
 
       els.startWorkBtn.disabled = state.work.isRunning;
       els.stopWorkBtn.disabled = !state.work.isRunning;
-
       els.startLeisureBtn.disabled = state.leisure.isRunning || state.bankMs <= 0;
       els.stopLeisureBtn.disabled = !state.leisure.isRunning;
     }
