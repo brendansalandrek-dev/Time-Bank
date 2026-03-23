@@ -660,11 +660,31 @@
     function playEmptyBankAlarm() {
       playSelectedAlarm();
       try {
-        if (navigator.vibrate) navigator.vibrate([180, 120, 180]);
+        if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]);
       } catch {}
-      try {
-        alert('Banked leisure time is empty. Leisure has been stopped.');
-      } catch {}
+      const existingBanner = document.getElementById('emptyBankBanner');
+      if (existingBanner) existingBanner.remove();
+      const banner = document.createElement('div');
+      banner.id = 'emptyBankBanner';
+      banner.textContent = 'Bank empty — leisure stopped';
+      banner.style.position = 'fixed';
+      banner.style.left = '16px';
+      banner.style.right = '16px';
+      banner.style.top = '16px';
+      banner.style.zIndex = '9999';
+      banner.style.padding = '16px 18px';
+      banner.style.borderRadius = '16px';
+      banner.style.border = '1px solid rgba(194,65,65,.55)';
+      banner.style.background = 'rgba(194,65,65,.96)';
+      banner.style.color = '#ffffff';
+      banner.style.fontWeight = '800';
+      banner.style.textAlign = 'center';
+      banner.style.boxShadow = '0 10px 30px rgba(0,0,0,.35)';
+      banner.style.fontSize = '1rem';
+      document.body.appendChild(banner);
+      setTimeout(() => {
+        if (banner && banner.parentNode) banner.remove();
+      }, 8000);
     }
 
     function startLeisure() {
