@@ -241,12 +241,12 @@
         <button id="showLogPageBtn" class="secondary">Work Log</button>
       </div>
       <h1>Mesh Fiber Games Time Bank</h1>
-      <p>Bank time when you work on Mesh Fiber Games. Spend that banked time when you want leisure or gaming. Everything is saved locally on your device and keeps counting accurately using real timestamps.</p>
+      <p>Bank time when you work on Mesh Fiber Games. Spend that balance when you want leisure or gaming. Everything is saved locally on your device and keeps counting accurately using real timestamps.</p>
     </section>
 
     <div id="mainPage">
       <section class="card bank">
-        <div class="label">Available leisure bank</div>
+        <div class="label">Leisure balance</div>
         <div id="bankDisplay" class="big-time">00:00:00</div>
         <div id="bankState" class="subtext">Ready</div>
       </section>
@@ -311,12 +311,12 @@
           <button id="importBtn" class="secondary">Import save</button>
         </div>
         <div class="row">
-          <button id="clearBankBtn" class="danger">Clear bank</button>
+          <button id="clearBankBtn" class="danger">Clear balance</button>
           <button id="fullResetBtn" class="danger">Full reset</button>
         </div>
         <input id="importFileInput" type="file" accept="application/json,.json" hidden />
         <div class="tiny">
-          Rules: only one timer can run at a time. Work adds to the bank. Leisure subtracts from the bank. Leisure automatically stops at zero so you cannot go negative.
+          Rules: only one timer can run at a time. Work adds to the balance. Leisure subtracts from the balance. Crossing below zero triggers the alarm once and creates time debt instead of stopping leisure.
         </div>
       </section>
     </div>
@@ -325,7 +325,7 @@
       <section class="card bank">
         <div class="label">Total Mesh Fiber Games time</div>
         <div id="allTimeDisplay" class="big-time">00:00:00</div>
-        <div class="subtext">This is your total logged company work time across all sessions, regardless of leisure used.</div>
+        <div id="weekNumberText" class="subtext">Week 1</div>
       </section>
 
       <section class="grid">
@@ -361,6 +361,9 @@
       settings: {
         alarm: 'techno'
       },
+      meta: {
+        trackingStartDate: getTodayKey()
+      },
       work: {
         isRunning: false,
         startedAt: null,
@@ -392,6 +395,7 @@
       bankDisplay: document.getElementById('bankDisplay'),
       bankState: document.getElementById('bankState'),
       allTimeDisplay: document.getElementById('allTimeDisplay'),
+      weekNumberText: document.getElementById('weekNumberText'),
       dailyLogDisplay: document.getElementById('dailyLogDisplay'),
       weeklyLogDisplay: document.getElementById('weeklyLogDisplay'),
       workStatus: document.getElementById('workStatus'),
@@ -438,14 +442,14 @@
     els.importBtn.addEventListener('click', () => els.importFileInput.click());
     els.importFileInput.addEventListener('change', importSave);
     els.clearBankBtn.addEventListener('click', () => {
-      if (!confirm('Clear the current leisure bank?')) return;
+      if (!confirm('Clear the current leisure balance?')) return;
       if (state.leisure.isRunning) stopLeisure();
       state.bankMs = 0;
       saveState();
       render();
     });
     els.fullResetBtn.addEventListener('click', () => {
-      if (!confirm('Full reset everything? This clears banked time and today totals.')) return;
+      if (!confirm('Full reset everything? This clears balance and stored totals.')) return;
       state = defaultState();
       saveState();
       render();
@@ -471,6 +475,21 @@
       return copy;
     }
 
+    function getTrackingStartKey() {
+      const explicit = state.meta?.trackingStartDate;
+      const workKeys = Object.keys(state.stats?.workByDay || {}).sort();
+      return explicit || workKeys[0] || getTodayKey();
+    }
+
+    function getJourneyWeekNumber() {
+      const trackingStart = new Date(`${getTrackingStartKey()}T00:00:00`);
+      const baseWeekStart = getWeekStart(trackingStart);
+      const currentWeekStart = getWeekStart(new Date());
+      const diffMs = currentWeekStart.getTime() - baseWeekStart.getTime();
+      const diffWeeks = Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000));
+      return Math.max(1, diffWeeks + 1);
+    }
+
     function addWorkedMs(ms, atTime = Date.now()) {
       const safeMs = Math.max(0, ms || 0);
       if (!safeMs) return;
@@ -480,6 +499,10 @@
       const key = getTodayKey(new Date(atTime));
       if (!state.stats || !state.stats.workByDay) state.stats = { workByDay: {} };
       state.stats.workByDay[key] = (Number(state.stats.workByDay[key]) || 0) + safeMs;
+      if (!state.meta) state.meta = { trackingStartDate: key };
+      if (!state.meta.trackingStartDate || key < state.meta.trackingStartDate) {
+        state.meta.trackingStartDate = key;
+      }
     }
 
     function addLeisureMs(ms) {
@@ -487,7 +510,7 @@
       if (!safeMs) return;
       state.leisure.sessionAccumulatedMs += safeMs;
       state.leisure.todayMs += safeMs;
-      state.bankMs = Math.max(0, state.bankMs - safeMs);
+      state.bankMs -= safeMs;
     }
 
     function getAllTimeWorkMs() {
@@ -515,14 +538,21 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return defaultState();
         const parsed = JSON.parse(raw);
-        return {
+        const loaded = {
           ...defaultState(),
           ...parsed,
           stats: { ...defaultState().stats, ...(parsed.stats || {}) },
           settings: { ...defaultState().settings, ...(parsed.settings || {}) },
+          meta: { ...defaultState().meta, ...(parsed.meta || {}) },
           work: { ...defaultState().work, ...(parsed.work || {}) },
           leisure: { ...defaultState().leisure, ...(parsed.leisure || {}) },
         };
+
+        const workKeys = Object.keys(loaded.stats?.workByDay || {}).sort();
+        if (workKeys.length && (!loaded.meta.trackingStartDate || workKeys[0] < loaded.meta.trackingStartDate)) {
+          loaded.meta.trackingStartDate = workKeys[0];
+        }
+        return loaded;
       } catch {
         return defaultState();
       }
@@ -556,16 +586,13 @@
 
       if (state.leisure.isRunning && state.leisure.startedAt) {
         const elapsed = Math.max(0, now - state.leisure.startedAt);
-        const usable = Math.min(elapsed, state.bankMs);
-        addLeisureMs(usable);
-
-        if (usable < elapsed || state.bankMs <= 0) {
-          state.leisure.isRunning = false;
-          state.leisure.startedAt = null;
-          state.bankMs = Math.max(0, state.bankMs);
-        } else {
-          state.leisure.startedAt = now;
+        const previousBank = state.bankMs;
+        addLeisureMs(elapsed);
+        if (previousBank > 0 && state.bankMs <= 0 && !emptyBankAlarmPlayed) {
+          emptyBankAlarmPlayed = true;
+          playEmptyBankAlarm();
         }
+        state.leisure.startedAt = now;
       }
 
       saveState();
@@ -592,20 +619,13 @@
         const now = Date.now();
         const elapsed = now - state.leisure.startedAt;
         if (elapsed > 0) {
-          const usable = Math.min(elapsed, state.bankMs);
-          addLeisureMs(usable);
-
-          if (usable < elapsed || state.bankMs <= 0) {
-            state.bankMs = Math.max(0, state.bankMs);
-            state.leisure.isRunning = false;
-            state.leisure.startedAt = null;
-            if (!emptyBankAlarmPlayed) {
-              emptyBankAlarmPlayed = true;
-              playEmptyBankAlarm();
-            }
-          } else {
-            state.leisure.startedAt = now;
+          const previousBank = state.bankMs;
+          addLeisureMs(elapsed);
+          if (previousBank > 0 && state.bankMs <= 0 && !emptyBankAlarmPlayed) {
+            emptyBankAlarmPlayed = true;
+            playEmptyBankAlarm();
           }
+          state.leisure.startedAt = now;
         }
       }
 
@@ -666,7 +686,7 @@
       if (existingBanner) existingBanner.remove();
       const banner = document.createElement('div');
       banner.id = 'emptyBankBanner';
-      banner.textContent = 'Bank empty — leisure stopped';
+      banner.textContent = 'Balance crossed zero — leisure now in time debt';
       banner.style.position = 'fixed';
       banner.style.left = '16px';
       banner.style.right = '16px';
@@ -690,11 +710,7 @@
     function startLeisure() {
       if (state.work.isRunning) stopWork();
       if (state.leisure.isRunning) return;
-      emptyBankAlarmPlayed = false;
-      if (state.bankMs <= 0) {
-        alert('No banked leisure time available yet.');
-        return;
-      }
+      emptyBankAlarmPlayed = state.bankMs <= 0;
       state.leisure.isRunning = true;
       state.leisure.startedAt = Date.now();
       state.leisure.sessionAccumulatedMs = 0;
@@ -707,9 +723,7 @@
       if (!state.leisure.isRunning) return;
       const now = Date.now();
       const elapsed = Math.max(0, now - state.leisure.startedAt);
-      const usable = Math.min(elapsed, state.bankMs);
-      addLeisureMs(usable);
-      state.bankMs = Math.max(0, state.bankMs);
+      addLeisureMs(elapsed);
       state.leisure.isRunning = false;
       state.leisure.startedAt = null;
       saveState();
@@ -759,11 +773,12 @@
             ...imported,
             stats: { ...defaultState().stats, ...(imported.stats || {}) },
             settings: { ...defaultState().settings, ...(imported.settings || {}) },
+            meta: { ...defaultState().meta, ...(imported.meta || {}) },
             work: { ...defaultState().work, ...(imported.work || {}) },
             leisure: { ...defaultState().leisure, ...(imported.leisure || {}) },
           };
 
-          nextState.bankMs = Math.max(0, Number(nextState.bankMs) || 0);
+          nextState.bankMs = Number(nextState.bankMs) || 0;
           nextState.work.sessionAccumulatedMs = Math.max(0, Number(nextState.work.sessionAccumulatedMs) || 0);
           nextState.work.todayMs = Math.max(0, Number(nextState.work.todayMs) || 0);
           nextState.leisure.sessionAccumulatedMs = Math.max(0, Number(nextState.leisure.sessionAccumulatedMs) || 0);
@@ -774,6 +789,11 @@
           nextState.stats.workByDay = nextState.stats.workByDay || {};
           nextState.settings = nextState.settings || { alarm: 'techno' };
           nextState.settings.alarm = nextState.settings.alarm || 'techno';
+          nextState.meta = nextState.meta || { trackingStartDate: getTodayKey() };
+          const workKeys = Object.keys(nextState.stats.workByDay).sort();
+          if (workKeys.length && (!nextState.meta.trackingStartDate || workKeys[0] < nextState.meta.trackingStartDate)) {
+            nextState.meta.trackingStartDate = workKeys[0];
+          }
 
           state = nextState;
           rollOverDailyIfNeeded();
@@ -791,33 +811,37 @@
     }
 
     function formatMs(ms) {
-      const totalSeconds = Math.floor(Math.max(0, ms) / 1000);
+      const sign = ms < 0 ? '-' : '';
+      const totalSeconds = Math.floor(Math.abs(ms) / 1000);
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
       const seconds = totalSeconds % 60;
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      return `${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
     function render() {
-      els.mainPage.style.display = currentPage === 'main' ? 'block' : 'block';
+      els.mainPage.style.display = currentPage === 'main' ? 'block' : 'none';
       els.logPage.style.display = currentPage === 'log' ? 'block' : 'none';
-      if (currentPage !== 'log') els.mainPage.style.display = 'block';
-      if (currentPage === 'log') els.mainPage.style.display = 'none';
 
       els.bankDisplay.textContent = formatMs(state.bankMs);
       els.allTimeDisplay.textContent = formatMs(getAllTimeWorkMs());
+      els.weekNumberText.textContent = `Week ${getJourneyWeekNumber()}`;
       els.dailyLogDisplay.textContent = formatMs(getTodayWorkMs());
       els.weeklyLogDisplay.textContent = formatMs(getWeekWorkMs());
       els.alarmSelect.value = state.settings?.alarm || 'techno';
 
       if (state.work.isRunning) {
-        els.bankState.textContent = 'Work is currently adding time to your leisure bank.';
-      } else if (state.leisure.isRunning) {
+        els.bankState.textContent = 'Work is currently adding time to your leisure balance.';
+      } else if (state.leisure.isRunning && state.bankMs > 0) {
         els.bankState.textContent = 'Leisure is currently spending your banked time.';
+      } else if (state.leisure.isRunning && state.bankMs <= 0) {
+        els.bankState.textContent = 'Leisure is currently in time debt.';
       } else if (state.bankMs > 0) {
         els.bankState.textContent = 'Banked time ready to spend.';
+      } else if (state.bankMs < 0) {
+        els.bankState.textContent = 'You currently owe time back to Mesh Fiber Games.';
       } else {
-        els.bankState.textContent = 'No banked time yet.';
+        els.bankState.textContent = 'Balance is even.';
       }
 
       els.workTimer.textContent = formatMs(state.work.sessionAccumulatedMs);
@@ -835,7 +859,7 @@
 
       els.startWorkBtn.disabled = state.work.isRunning;
       els.stopWorkBtn.disabled = !state.work.isRunning;
-      els.startLeisureBtn.disabled = state.leisure.isRunning || state.bankMs <= 0;
+      els.startLeisureBtn.disabled = state.leisure.isRunning;
       els.stopLeisureBtn.disabled = !state.leisure.isRunning;
     }
   </script>
